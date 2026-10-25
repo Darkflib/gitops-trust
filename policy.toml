@@ -1,0 +1,265 @@
+# The trust policy for Darkflib/gitops: which images may run on its hosts, and how each is verified.
+# Released, signed, by .github/workflows/release.yml on a tag vN, where N is [release] version below;
+# hosts, gitops CI and promote.py all fetch the latest release and check its signature (README.md).
+# Every change bumps the version, and is tagged once merged.
+
+[release]
+version = 1
+
+# Which images may run, and how each is verified. Longest matching prefix wins.
+# Every Image= in a unit must be pinned by digest (tag@sha256:… or repo@sha256:…).
+#
+# mode = "keyless"     cosign keyless: signed by a GitHub Actions workflow matching `identity`
+# mode = "key"         cosign with a public key file on the host (test registries)
+# mode = "digest-only" upstream doesn't sign; the digest pin is the only guarantee
+#                      (Docker Official Images). Keep this list short and deliberate.
+#
+# [image.attest]       optional, keyless rules only: attestations promote.py requires before it
+#                      pins a build. provenance and sbom are a kind ("github", "cosign") or a list
+#                      of kinds any of which will do; source = "owner/repo".
+#
+# There is no org-wide rule, on purpose: an image with no rule of its own matches nothing, and
+# check.py, promote.py and hosts all refuse it ("no image policy covers …"). check.py also refuses a
+# keyless rule whose prefix doesn't name one image or whose identity doesn't name one repository,
+# so an org-wide rule can't come back by accident. A new image needs a rule like those below.
+
+# darkflib.com: signed by its own ci.yml on main and nothing else, with SLSA provenance and an
+# SPDX SBOM attested by the same workflow. promote.py requires the attestations before it pins;
+# hosts read this rule for the signature only and ignore `attest` (docs/attestations.md).
+# The repository went private on 2026-10-21, so its builds are attested with `cosign attest`;
+# "github" stays accepted so that builds attested while it was public can still be rolled back to.
+[[image]]
+prefix = "ghcr.io/darkflib/darkflib.com"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/darkflib\.com/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = ["cosign", "github"]
+sbom = ["cosign", "github"]
+# The provenance must name this repository as its workflow's.
+source = "Darkflib/darkflib.com"
+
+# The images built in public repositories: each signed by one workflow in one repository, and
+# attested by that workflow with GitHub's attestations (actions/attest-build-provenance and
+# actions/attest with push-to-registry), the "github" kind. As darkflib.com's above, promote.py
+# enforces `attest` and hosts ignore it.
+
+# sre-tab: ci.yml publishes from main and from version tags (its release step refuses anything but
+# vMAJOR.MINOR.PATCH), and a build from either may be pinned.
+[[image]]
+prefix = "ghcr.io/darkflib/sre-tab"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/sre-tab/\.github/workflows/ci\.yml@refs/(heads/main|tags/v[0-9].*)$'
+
+[image.attest]
+provenance = "github"
+sbom = "github"
+source = "Darkflib/sre-tab"
+
+# orbit-data: ci.yml publishes from main only. Its attestations were added in Darkflib/orbit-data#44;
+# builds from before that are signature-only. The first attested build is 1e70dfa9 (sha-110e42c).
+[[image]]
+prefix = "ghcr.io/darkflib/orbit-data"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/orbit-data/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "github"
+sbom = "github"
+source = "Darkflib/orbit-data"
+
+# The images built in private repositories: each signed by one workflow, on main, in one repository,
+# and attested by that workflow with `cosign attest` (the "cosign" kind: GitHub's attestations need a
+# public repository on this plan). As darkflib.com's above, promote.py enforces `attest` and hosts
+# ignore it. Every build pinned when these rules were added verifies against its identity here.
+# Images built with BuildKit (an OCI index) are attested on the index digest, which is what is pinned.
+
+# advent-site (advent.darkflib.com): ci.yml publishes from main only.
+[[image]]
+prefix = "ghcr.io/darkflib/advent-site"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/advent-site/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/advent-site"
+
+[[image]]
+prefix = "ghcr.io/darkflib/acctwatch"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/acctwatch/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/acctwatch"
+
+[[image]]
+prefix = "ghcr.io/darkflib/api.mikepreston.org"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/api\.mikepreston\.org/\.github/workflows/publish\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/api.mikepreston.org"
+
+# The SPA. Its prefix also matches the three images below, whose longer prefixes win.
+[[image]]
+prefix = "ghcr.io/darkflib/mikepreston.org"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/mikepreston\.org/\.github/workflows/build-and-push\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/mikepreston.org"
+
+[[image]]
+prefix = "ghcr.io/darkflib/mikepreston.org-api"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/mikepreston\.org/\.github/workflows/build-and-push\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/mikepreston.org"
+
+[[image]]
+prefix = "ghcr.io/darkflib/mikepreston.org-tools"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/mikepreston\.org/\.github/workflows/build-and-push\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/mikepreston.org"
+
+# The content bundle: files only (FROM scratch), so its SBOM lists just the image itself.
+[[image]]
+prefix = "ghcr.io/darkflib/mikepreston.org-content"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/mikepreston\.org/\.github/workflows/content-bundle\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/mikepreston.org"
+
+[[image]]
+prefix = "ghcr.io/darkflib/pixelyard"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/pixelyard/\.github/workflows/build-and-push\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/pixelyard"
+
+[[image]]
+prefix = "ghcr.io/darkflib/refdata"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/refdata/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/refdata"
+
+[[image]]
+prefix = "ghcr.io/darkflib/toys"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/toys/\.github/workflows/publish\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/toys"
+
+[[image]]
+prefix = "ghcr.io/darkflib/wwff-auth"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/wwff-auth/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/wwff-auth"
+
+[[image]]
+prefix = "ghcr.io/darkflib/wwff-pagerecon"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/wwff-pagerecon/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/wwff-pagerecon"
+
+[[image]]
+prefix = "ghcr.io/darkflib/wwff-recon"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/wwff-recon/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/wwff-recon"
+
+[[image]]
+prefix = "ghcr.io/darkflib/wwff.tech-website"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/wwff\.tech-website/\.github/workflows/build-and-push\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/wwff.tech-website"
+
+[[image]]
+prefix = "ghcr.io/wwff-tech/rocky-agent"
+mode = "keyless"
+identity = '^https://github\.com/wwff-tech/rocky-agent/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "wwff-tech/rocky-agent"
+
+[[image]]
+prefix = "docker.io/library/postgres:"
+mode = "digest-only"
+
+[[image]]
+prefix = "docker.io/library/redis:"
+mode = "digest-only"
+
+[[image]]
+prefix = "docker.io/library/caddy:"
+mode = "digest-only"
+
+[[image]]
+prefix = "docker.io/restic/rest-server:"
+mode = "digest-only"
+
+# 1Password Connect: published unsigned on Docker Hub (checked 2026-09-30).
+[[image]]
+prefix = "docker.io/1password/connect-"
+mode = "digest-only"
+
+[[image]]
+prefix = "docker.io/caronc/apprise:"
+mode = "digest-only"
+
+[[image]]
+prefix = "ghcr.io/twin/gatus:"
+mode = "digest-only"
+
+# A throwaway test registry on a test box, signed with a local test key. Only a host holding
+# that key file can verify anything against this rule.
+[[image]]
+prefix = "localhost:5005/"
+mode = "key"
+key = "/etc/gitops/test-cosign.pub"
+insecure_registry = "true"
