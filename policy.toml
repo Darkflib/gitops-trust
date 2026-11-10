@@ -4,7 +4,7 @@
 # Every change bumps the version, and is tagged once merged.
 
 [release]
-version = 1
+version = 2
 
 # Which images may run, and how each is verified. Longest matching prefix wins.
 # Every Image= in a unit must be pinned by digest (tag@sha256:… or repo@sha256:…).
@@ -206,6 +206,18 @@ identity = '^https://github\.com/Darkflib/wwff-recon/\.github/workflows/ci\.yml@
 provenance = "cosign"
 sbom = "cosign"
 source = "Darkflib/wwff-recon"
+
+# wwff-scan: the free website scan's control plane on wwff.tech. Signed by its own publish.yml on
+# main, with SLSA provenance and an SPDX SBOM attested by `cosign attest` (private repository).
+[[image]]
+prefix = "ghcr.io/darkflib/wwff-scan"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/wwff-scan/\.github/workflows/publish\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/wwff-scan"
 
 [[image]]
 prefix = "ghcr.io/darkflib/wwff.tech-website"
