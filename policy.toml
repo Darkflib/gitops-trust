@@ -4,7 +4,7 @@
 # Every change bumps the version, and is tagged once merged.
 
 [release]
-version = 3
+version = 4
 
 # Which images may run, and how each is verified. Longest matching prefix wins.
 # Every Image= in a unit must be pinned by digest (tag@sha256:… or repo@sha256:…).
@@ -212,6 +212,19 @@ source = "Darkflib/wwff-recon"
 # `cosign attest` (private repository), as wwff-scan's.
 [[image]]
 prefix = "ghcr.io/darkflib/ghboard-hosted"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/ghboard-hosted/\.github/workflows/publish\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/ghboard-hosted"
+
+# steward-scanner: the guest image for steward's sandboxed scans (osv-scanner, gitleaks, zizmor).
+# Built from ghboard-hosted's sandbox/scanner/ by the same publish.yml, with the same attestations.
+# gitops pins it in an .image unit; a oneshot loads the verified image into msb on geekom1.
+[[image]]
+prefix = "ghcr.io/darkflib/steward-scanner"
 mode = "keyless"
 identity = '^https://github\.com/Darkflib/ghboard-hosted/\.github/workflows/publish\.yml@refs/heads/main$'
 
