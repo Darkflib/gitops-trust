@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          fetch-depth: 2  # a PR's merge commit and its base, to see if policy.toml changed
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -25,6 +26,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           last=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq .tagName 2>/dev/null || echo v0)
-          # On main after a release is cut, the version equals the last one; on a PR it must be higher.
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then after="${last#v}"; else after=$(( ${last#v} - 1 )); fi
+          # A PR that changes policy.toml must raise the version. Any other PR, like main after a
+          # release is cut, leaves it equal to the last one.
+          after=$(( ${last#v} - 1 ))
+          if [ "$GITHUB_EVENT_NAME" = pull_request ] && ! git diff --quiet HEAD^1 HEAD -- policy.toml; then
+            after="${last#v}"
+          fi
           python3 bin/lint.py --after "$after"
