@@ -4,7 +4,7 @@
 # Every change bumps the version, and is tagged once merged.
 
 [release]
-version = 4
+version = 5
 
 # Which images may run, and how each is verified. Longest matching prefix wins.
 # Every Image= in a unit must be pinned by digest (tag@sha256:… or repo@sha256:…).
@@ -255,6 +255,20 @@ provenance = "cosign"
 sbom = "cosign"
 source = "Darkflib/wwff.tech-website"
 
+# rocky-agent moved from wwff-tech to Darkflib on 2026-11-25, so gitops' GITHUB_TOKEN can read
+# its private package (Manage Actions access only offers repositories of the package's owner).
+[[image]]
+prefix = "ghcr.io/darkflib/rocky-agent"
+mode = "keyless"
+identity = '^https://github\.com/Darkflib/rocky-agent/\.github/workflows/ci\.yml@refs/heads/main$'
+
+[image.attest]
+provenance = "cosign"
+sbom = "cosign"
+source = "Darkflib/rocky-agent"
+
+# The builds from before the move, still pinned in gitops. Remove once apps/rocky pins a
+# ghcr.io/darkflib/rocky-agent digest.
 [[image]]
 prefix = "ghcr.io/wwff-tech/rocky-agent"
 mode = "keyless"
